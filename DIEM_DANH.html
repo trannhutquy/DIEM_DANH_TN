@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Điểm Danh QR Siêu Tốc</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; --text: #333; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; color: var(--text); padding-bottom: 20px;}
+        .header { width: 100%; background: #fff; padding: 15px 0; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: bold; font-size: 18px; position: sticky; top: 0; z-index: 100;}
+        
+        #camera-wrapper { position: relative; width: 95%; max-width: 500px; margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none;}
+        #camera-wrapper::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 6px solid transparent; pointer-events: none; transition: 0.2s; }
+        #camera-wrapper.scan-success::after { border-color: var(--success); box-shadow: inset 0 0 20px rgba(40,167,69,0.8); }
+        #video { width: 100%; display: block; object-fit: cover; }
+        
+        .dashboard { width: 95%; max-width: 500px; background: #fff; margin-top: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box;}
+        .stat-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .stat-box h3 { margin: 0; color: var(--primary); }
+        .stat-box span { font-size: 24px; font-weight: bold; color: var(--success); }
+        
+        #scanned-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; font-size: 14px; }
+        #scanned-list li { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;}
+        #scanned-list li:nth-child(odd) { background-color: #f9f9f9; }
+        
+        .btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; color: white; transition: 0.2s;}
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-start { background: var(--primary); margin-top: 50px; width: 80%; border-radius: 25px; }
+        .btn-send { background: var(--success); }
+        .btn-clear { background: var(--danger); margin-top: 5px; }
+
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999;}
+    </style>
+</head>
+<body>
+
+    <div class="header">Hệ Thống Điểm Danh Nhan 4 </div>
+
+    <button id="start-btn" class="btn btn-start" onclick="startCamera()">Bật Camera Quét Mã</button>
+
+    <div id="camera-wrapper">
+        <video id="video" playsinline></video>
+        <canvas id="canvas" hidden></canvas>
+    </div>
+
+    <div class="dashboard" id="dashboard" style="display: none;">
+        <div class="stat-box">
+            <h3>Đã quét:</h3>
+            <span id="counter">0</span>
+        </div>
+        <ul id="scanned-list"></ul>
+        <button id="send-btn" class="btn btn-send" onclick="sendData()" disabled>Gửi Dữ Liệu</button>
+        <button class="btn btn-clear" onclick="clearData()">Xóa Danh Sách</button>
+    </div>
+
+    <div id="toast">Thông báo</div>
+
+<script>
+    // --- 1. CẤU HÌNH ---
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzOOGzqBxu8RiSQxCemehYATTmAQs-EEsTRj2B3NA9Nfd07nO595z2vIlfZ1yIpAvFdmA/exec";
+    
+    // Mảng lưu trữ các mã QR đã quét (Lưu tạm ở RAM)
+    let scannedCodes = [];
+    
+    const video = document.getElementById("video");
+    const canvasElement = document.getElementById("canvas");
+    const canvas = canvasElement.getContext("2d", { willReadFrequently: true });
+    
+    let isCameraRunning = false;
+    let lastScanTime = 0;
+
+    // --- 2. HÀM GIAO DIỆN ---
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', 2000);
+    }
+
+    // Cập nhật giao diện đếm số và danh sách
+    function updateUI() {
+        document.getElementById('counter').innerText = scannedCodes.length;
+        const list = document.getElementById('scanned-list');
+        list.innerHTML = "";
+        
+        // Đảo ngược mảng để mã mới quét hiện lên trên cùng
+        [...scannedCodes].reverse().forEach((code, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${code}</span> <small>#${scannedCodes.length - index}</small>`;
+            list.appendChild(li);
+        });
+
+        // Bật/tắt nút Gửi
+        document.getElementById('send-btn').disabled = scannedCodes.length === 0;
+    }
+
+    function clearData() {
+        if(confirm("Bạn có chắc muốn xóa toàn bộ danh sách chưa gửi?")) {
+            scannedCodes = [];
+            updateUI();
+            showToast("Đã xóa danh sách");
+        }
+    }
+
+    // --- 3. XỬ LÝ CAMERA & QUÉT MÃ ---
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true);
+                video.play();
+                isCameraRunning = true;
+                
+                document.getElementById('start-btn').style.display = 'none';
+                document.getElementById('camera-wrapper').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'block';
+                
+                requestAnimationFrame(tick);
+                showToast("Camera đã sẵn sàng!");
+            })
+            .catch(err => {
+                alert("Lỗi truy cập Camera. Vui lòng cấp quyền!");
+            });
+    }
+
+    function tick() {
+        if (!isCameraRunning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Giảm độ trễ quét xuống 50ms (rất nhạy)
+            let now = Date.now();
+            if (now - lastScanTime > 50) {
+                lastScanTime = now;
+                var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+                if (code) {
+                    processQRCode(code.data);
+                }
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function processQRCode(data) {
+        // CHỐNG TRÙNG: Kiểm tra xem mã này đã có trong mảng chưa
+        if (scannedCodes.includes(data)) {
+            return; // Nếu có rồi thì bỏ qua luôn, không làm gì cả
+        }
+
+        // Thêm vào mảng
+        scannedCodes.push(data);
+        
+        // Hiệu ứng chớp xanh
+        const camWrapper = document.getElementById('camera-wrapper');
+        camWrapper.classList.add('scan-success');
+        setTimeout(() => camWrapper.classList.remove('scan-success'), 100);
+
+        // Phát âm thanh bíp ngắn (Dùng Web Audio API để không bị lỗi trên iOS)
+        beep();
+
+        // Cập nhật giao diện
+        updateUI();
+    }
+
+    // Hàm tạo tiếng "Bíp" khi quét thành công
+    function beep() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 800; // Tần số âm thanh
+            osc.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1); // Kêu trong 0.1 giây
+        } catch(e) { console.log("Trình duyệt không hỗ trợ AudioContext"); }
+    }
+
+   // --- 4. GỬI DỮ LIỆU LÊN SERVER ---
+// --- 4. GỬI DỮ LIỆU LÊN SERVER ---
+function sendData() {
+    if (scannedCodes.length === 0) return;
+    
+    const btn = document.getElementById('send-btn');
+    btn.innerText = "Đang gửi...";
+    btn.disabled = true;
+
+    // Ép mảng thẳng thành chuỗi JSON, không dùng URLSearchParams nữa
+    const rawJSON = JSON.stringify(scannedCodes);
+
+    fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: rawJSON
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            showToast(`✅ Đã lưu thành công ${data.count} mã!`);
+            scannedCodes = []; 
+            updateUI();
+        } else {
+            alert("LỖI TỪ SERVER:\n" + data.message + "\n\nDữ liệu gửi lên: " + data.rawReceived);
+        }
+    })
+    .catch(err => {
+        alert("Lỗi kết nối mạng! Không thể gửi dữ liệu.");
+        console.error(err);
+    })
+    .finally(() => {
+        btn.innerText = "Gửi Dữ Liệu";
+        btn.disabled = scannedCodes.length === 0;
+    });
+}
+</script>
+</body>
+</html>
