@@ -3,55 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Điểm Danh QR Siêu Tốc</title>
+    <title>Điểm Danh QR Siêu Tốc - Xứ Đoàn Thánh Anrê</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --bg: #f4f7f6; --text: #333; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; color: var(--text); padding-bottom: 20px;}
-        .header { width: 100%; background: #fff; padding: 15px 0; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: bold; font-size: 18px; position: sticky; top: 0; z-index: 100;}
-        
-        #camera-wrapper { position: relative; width: 95%; max-width: 500px; margin-top: 15px; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none;}
-        #camera-wrapper::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 6px solid transparent; pointer-events: none; transition: 0.2s; }
-        #camera-wrapper.scan-success::after { border-color: var(--success); box-shadow: inset 0 0 20px rgba(40,167,69,0.8); }
-        #video { width: 100%; display: block; object-fit: cover; }
-        
-        .dashboard { width: 95%; max-width: 500px; background: #fff; margin-top: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); box-sizing: border-box;}
-        .stat-box { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        .stat-box h3 { margin: 0; color: var(--primary); }
-        .stat-box span { font-size: 24px; font-weight: bold; color: var(--success); }
-        
-        #scanned-list { list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto; font-size: 14px; }
-        #scanned-list li { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;}
-        #scanned-list li:nth-child(odd) { background-color: #f9f9f9; }
-        
-        .btn { padding: 12px 20px; font-size: 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; color: white; transition: 0.2s;}
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-start { background: var(--primary); margin-top: 50px; width: 80%; border-radius: 25px; }
-        .btn-send { background: var(--success); }
-        .btn-clear { background: var(--danger); margin-top: 5px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999;}
+        :root { 
+            --primary: #0056b3; 
+            --primary-light: #007bff;
+            --success: #198754; 
+            --danger: #dc3545; 
+            --bg: #f0f2f5; 
+            --text: #1c1e21;
+            --card-bg: #ffffff;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            color: var(--text); 
+            padding-bottom: 30px;
+        }
+
+        /* --- PHẦN HEADER & LOGO --- */
+        .header-container {
+            width: 100%;
+            background: var(--card-bg);
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            border: 2px solid var(--primary-light);
+        }
+
+        .main-title {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sub-title {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #606770;
+            font-weight: 600;
+        }
+
+        /* --- PHẦN CAMERA --- */
+        #camera-wrapper { 
+            position: relative; 
+            width: 92%; 
+            max-width: 500px; 
+            margin-top: 20px; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            background: #000; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+            display: none;
+            border: 4px solid var(--card-bg);
+        }
+
+        #camera-wrapper::after { 
+            content: ""; 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            border: 4px solid transparent; 
+            pointer-events: none; 
+            transition: 0.2s; 
+        }
+
+        #camera-wrapper.scan-success::after { 
+            border-color: var(--success); 
+            box-shadow: inset 0 0 30px rgba(25,135,84,0.8); 
+        }
+
+        #video { 
+            width: 100%; 
+            display: block; 
+            object-fit: cover; 
+        }
+
+        /* Hiệu ứng tia laser quét */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(0, 255, 0, 0.7);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.4);
+            animation: scan 2s infinite linear;
+            display: none; /* Chỉ hiện khi bật camera */
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* --- PHẦN BẢNG ĐIỀU KHIỂN --- */
+        .dashboard { 
+            width: 92%; 
+            max-width: 500px; 
+            background: var(--card-bg); 
+            margin-top: 20px; 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            box-sizing: border-box;
+        }
+
+        .stat-box { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px; 
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-box h3 { margin: 0; color: #495057; font-size: 16px;}
+        .stat-box span { font-size: 26px; font-weight: 800; color: var(--primary); }
+
+        #scanned-list { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0 0 15px 0; 
+            max-height: 180px; 
+            overflow-y: auto; 
+            font-size: 15px; 
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+        }
+
+        #scanned-list li { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #e9ecef; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #scanned-list li:last-child { border-bottom: none; }
+        #scanned-list li:nth-child(odd) { background-color: #fcfcfc; }
+        #scanned-list li span { font-weight: 600; color: var(--text); }
+        #scanned-list li small { background: var(--primary-light); color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px;}
+
+        /* --- NÚT BẤM --- */
+        .btn { 
+            padding: 14px 20px; 
+            font-size: 16px; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 100%; 
+            color: white; 
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .btn-start { 
+            background: linear-gradient(135deg, var(--primary), var(--primary-light)); 
+            margin-top: 40px; 
+            width: 85%; 
+            max-width: 350px;
+            border-radius: 30px; 
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+        
+        .btn-send { background: var(--success); margin-bottom: 10px;}
+        .btn-clear { background: #f8f9fa; color: var(--danger); border: 1px solid var(--danger); }
+        .btn-clear:hover { background: var(--danger); color: white; }
+
+        #toast { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: rgba(0,0,0,0.85); 
+            color: #fff; 
+            padding: 12px 24px; 
+            border-radius: 30px; 
+            font-size: 15px; 
+            font-weight: 500;
+            opacity: 0; 
+            transition: opacity 0.3s; 
+            pointer-events: none; 
+            z-index: 9999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Custom Scrollbar cho danh sách */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px;}
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
     </style>
 </head>
 <body>
 
-    <div class="header">Hệ Thống Điểm Danh Nhan 4 </div>
+    <div class="header-container">
+        <!-- BẠN HÃY THAY LINK ẢNH LOGO CỦA XỨ ĐOÀN VÀO THUỘC TÍNH SRC BÊN DƯỚI -->
+        <img src="https://via.placeholder.com/150/007bff/ffffff?text=Logo+TNTT" alt="Logo Xứ đoàn Thánh Anrê" class="logo" id="logo-img">
+        <h1 class="main-title">Xứ Đoàn Thánh Anrê</h1>
+        <h2 class="sub-title">Hệ Thống Điểm Danh QR</h2>
+    </div>
 
-    <button id="start-btn" class="btn btn-start" onclick="startCamera()">Bật Camera Quét Mã</button>
+    <button id="start-btn" class="btn btn-start" onclick="startCamera()">📸 Bật Camera Quét Mã</button>
 
     <div id="camera-wrapper">
+        <div class="scan-line" id="scan-line"></div>
         <video id="video" playsinline></video>
         <canvas id="canvas" hidden></canvas>
     </div>
 
     <div class="dashboard" id="dashboard" style="display: none;">
         <div class="stat-box">
-            <h3>Đã quét:</h3>
+            <h3>Tổng số đã quét:</h3>
             <span id="counter">0</span>
         </div>
         <ul id="scanned-list"></ul>
-        <button id="send-btn" class="btn btn-send" onclick="sendData()" disabled>Gửi Dữ Liệu</button>
-        <button class="btn btn-clear" onclick="clearData()">Xóa Danh Sách</button>
+        <button id="send-btn" class="btn btn-send" onclick="sendData()" disabled>☁️ Gửi Dữ Liệu</button>
+        <button class="btn btn-clear" onclick="clearData()">🗑️ Xóa Danh Sách</button>
     </div>
 
     <div id="toast">Thông báo</div>
@@ -75,7 +283,7 @@
         const toast = document.getElementById('toast');
         toast.innerText = msg;
         toast.style.opacity = '1';
-        setTimeout(() => toast.style.opacity = '0', 2000);
+        setTimeout(() => toast.style.opacity = '0', 2500);
     }
 
     // Cập nhật giao diện đếm số và danh sách
@@ -96,7 +304,7 @@
     }
 
     function clearData() {
-        if(confirm("Bạn có chắc muốn xóa toàn bộ danh sách chưa gửi?")) {
+        if(confirm("⚠️ Bạn có chắc muốn xóa toàn bộ danh sách chưa gửi?")) {
             scannedCodes = [];
             updateUI();
             showToast("Đã xóa danh sách");
@@ -115,6 +323,7 @@
                 document.getElementById('start-btn').style.display = 'none';
                 document.getElementById('camera-wrapper').style.display = 'block';
                 document.getElementById('dashboard').style.display = 'block';
+                document.getElementById('scan-line').style.display = 'block'; // Hiện tia laser
                 
                 requestAnimationFrame(tick);
                 showToast("Camera đã sẵn sàng!");
@@ -158,9 +367,9 @@
         // Hiệu ứng chớp xanh
         const camWrapper = document.getElementById('camera-wrapper');
         camWrapper.classList.add('scan-success');
-        setTimeout(() => camWrapper.classList.remove('scan-success'), 100);
+        setTimeout(() => camWrapper.classList.remove('scan-success'), 150);
 
-        // Phát âm thanh bíp ngắn (Dùng Web Audio API để không bị lỗi trên iOS)
+        // Phát âm thanh bíp ngắn
         beep();
 
         // Cập nhật giao diện
@@ -180,16 +389,15 @@
         } catch(e) { console.log("Trình duyệt không hỗ trợ AudioContext"); }
     }
 
-   // --- 4. GỬI DỮ LIỆU LÊN SERVER ---
 // --- 4. GỬI DỮ LIỆU LÊN SERVER ---
 function sendData() {
     if (scannedCodes.length === 0) return;
     
     const btn = document.getElementById('send-btn');
-    btn.innerText = "Đang gửi...";
+    btn.innerHTML = "⏳ Đang gửi...";
     btn.disabled = true;
 
-    // Ép mảng thẳng thành chuỗi JSON, không dùng URLSearchParams nữa
+    // Ép mảng thẳng thành chuỗi JSON
     const rawJSON = JSON.stringify(scannedCodes);
 
     fetch(GAS_WEB_APP_URL, {
@@ -214,7 +422,7 @@ function sendData() {
         console.error(err);
     })
     .finally(() => {
-        btn.innerText = "Gửi Dữ Liệu";
+        btn.innerHTML = "☁️ Gửi Dữ Liệu";
         btn.disabled = scannedCodes.length === 0;
     });
 }
