@@ -9,13 +9,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
         :root { 
-            --primary: #0056b3; 
-            --primary-light: #007bff;
-            --success: #198754; 
-            --danger: #dc3545; 
-            --bg: #f0f2f5; 
+            --primary: #c8102e; /* Màu đỏ chủ đạo */
+            --primary-light: #e63946; /* Màu đỏ sáng hơn */
+            --success: #c8102e; /* Chuyển màu thành công sang đỏ đồng bộ */
+            --danger: #333333; /* Chuyển màu nút xóa thành đen xám để nhường sự nổi bật cho màu đỏ */
+            --bg: #fdfdfd; /* Nền trắng/xám cực nhạt */
             --text: #1c1e21;
-            --card-bg: #ffffff;
+            --card-bg: #ffffff; /* Nền thẻ trắng */
         }
         
         body { 
@@ -52,7 +52,8 @@
             object-fit: cover;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 10px;
-            border: 2px solid var(--primary-light);
+            border: 2px solid var(--primary);
+            background-color: white;
         }
 
         .main-title {
@@ -80,7 +81,7 @@
             border-radius: 16px; 
             overflow: hidden; 
             background: #000; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+            box-shadow: 0 8px 20px rgba(200, 16, 46, 0.15); 
             display: none;
             border: 4px solid var(--card-bg);
         }
@@ -95,8 +96,8 @@
         }
 
         #camera-wrapper.scan-success::after { 
-            border-color: var(--success); 
-            box-shadow: inset 0 0 30px rgba(25,135,84,0.8); 
+            border-color: var(--primary); 
+            box-shadow: inset 0 0 30px rgba(200, 16, 46, 0.8); 
         }
 
         #video { 
@@ -105,17 +106,17 @@
             object-fit: cover; 
         }
 
-        /* Hiệu ứng tia laser quét */
+        /* Hiệu ứng tia laser quét màu đỏ */
         .scan-line {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 3px;
-            background: rgba(0, 255, 0, 0.7);
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.4);
+            background: rgba(255, 0, 0, 0.7);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.8), 0 0 20px rgba(255, 0, 0, 0.4);
             animation: scan 2s infinite linear;
-            display: none; /* Chỉ hiện khi bật camera */
+            display: none;
             z-index: 10;
         }
 
@@ -136,13 +137,14 @@
             border-radius: 16px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
             box-sizing: border-box;
+            border: 1px solid #f1f1f1;
         }
 
         .stat-box { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            background: #f8f9fa;
+            background: #fdfdfd;
             padding: 12px 20px;
             border-radius: 10px;
             margin-bottom: 15px; 
@@ -194,7 +196,7 @@
         }
 
         .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; background: #cccccc; color: #666; box-shadow: none; }
         
         .btn-start { 
             background: linear-gradient(135deg, var(--primary), var(--primary-light)); 
@@ -203,10 +205,10 @@
             max-width: 350px;
             border-radius: 30px; 
             font-size: 18px;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(200, 16, 46, 0.3);
         }
         
-        .btn-send { background: var(--success); margin-bottom: 10px;}
+        .btn-send { background: var(--primary); margin-bottom: 10px;}
         .btn-clear { background: #f8f9fa; color: var(--danger); border: 1px solid var(--danger); }
         .btn-clear:hover { background: var(--danger); color: white; }
 
@@ -228,7 +230,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         
-        /* Custom Scrollbar cho danh sách */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px;}
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
@@ -238,13 +239,12 @@
 <body>
 
     <div class="header-container">
-        <!-- BẠN HÃY THAY LINK ẢNH LOGO CỦA XỨ ĐOÀN VÀO THUỘC TÍNH SRC BÊN DƯỚI -->
-        <img src="https://via.placeholder.com/150/007bff/ffffff?text=Logo+TNTT" alt="Logo Xứ đoàn Thánh Anrê" class="logo" id="logo-img">
+        <img src="https://i.imgur.com/9lLikJX_d.jpeg?maxwidth=520&shape=thumb&fidelity=high" alt="Logo Xứ đoàn Thánh Anrê" class="logo" id="logo-img">
         <h1 class="main-title">Xứ Đoàn Thánh Anrê</h1>
         <h2 class="sub-title">Hệ Thống Điểm Danh QR</h2>
     </div>
 
-    <button id="start-btn" class="btn btn-start" onclick="startCamera()">📸 Bật Camera Quét Mã</button>
+    <button id="start-btn" class="btn btn-start" onclick="startCamera()">Bật Camera Quét Mã</button>
 
     <div id="camera-wrapper">
         <div class="scan-line" id="scan-line"></div>
@@ -258,17 +258,15 @@
             <span id="counter">0</span>
         </div>
         <ul id="scanned-list"></ul>
-        <button id="send-btn" class="btn btn-send" onclick="sendData()" disabled>☁️ Gửi Dữ Liệu</button>
-        <button class="btn btn-clear" onclick="clearData()">🗑️ Xóa Danh Sách</button>
+        <button id="send-btn" class="btn btn-send" onclick="sendData()" disabled>Gửi Dữ Liệu</button>
+        <button class="btn btn-clear" onclick="clearData()">Xóa Danh Sách</button>
     </div>
 
     <div id="toast">Thông báo</div>
 
 <script>
-    // --- 1. CẤU HÌNH ---
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzOOGzqBxu8RiSQxCemehYATTmAQs-EEsTRj2B3NA9Nfd07nO595z2vIlfZ1yIpAvFdmA/exec";
     
-    // Mảng lưu trữ các mã QR đã quét (Lưu tạm ở RAM)
     let scannedCodes = [];
     
     const video = document.getElementById("video");
@@ -278,7 +276,6 @@
     let isCameraRunning = false;
     let lastScanTime = 0;
 
-    // --- 2. HÀM GIAO DIỆN ---
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
@@ -286,32 +283,28 @@
         setTimeout(() => toast.style.opacity = '0', 2500);
     }
 
-    // Cập nhật giao diện đếm số và danh sách
     function updateUI() {
         document.getElementById('counter').innerText = scannedCodes.length;
         const list = document.getElementById('scanned-list');
         list.innerHTML = "";
         
-        // Đảo ngược mảng để mã mới quét hiện lên trên cùng
         [...scannedCodes].reverse().forEach((code, index) => {
             const li = document.createElement('li');
             li.innerHTML = `<span>${code}</span> <small>#${scannedCodes.length - index}</small>`;
             list.appendChild(li);
         });
 
-        // Bật/tắt nút Gửi
         document.getElementById('send-btn').disabled = scannedCodes.length === 0;
     }
 
     function clearData() {
-        if(confirm("⚠️ Bạn có chắc muốn xóa toàn bộ danh sách chưa gửi?")) {
+        if(confirm("Bạn có chắc muốn xóa toàn bộ danh sách chưa gửi?")) {
             scannedCodes = [];
             updateUI();
             showToast("Đã xóa danh sách");
         }
     }
 
-    // --- 3. XỬ LÝ CAMERA & QUÉT MÃ ---
     function startCamera() {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(stream => {
@@ -323,10 +316,10 @@
                 document.getElementById('start-btn').style.display = 'none';
                 document.getElementById('camera-wrapper').style.display = 'block';
                 document.getElementById('dashboard').style.display = 'block';
-                document.getElementById('scan-line').style.display = 'block'; // Hiện tia laser
+                document.getElementById('scan-line').style.display = 'block'; 
                 
                 requestAnimationFrame(tick);
-                showToast("Camera đã sẵn sàng!");
+                showToast("Camera đã sẵn sàng");
             })
             .catch(err => {
                 alert("Lỗi truy cập Camera. Vui lòng cấp quyền!");
@@ -340,7 +333,6 @@
             canvasElement.width = video.videoWidth;
             canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
             
-            // Giảm độ trễ quét xuống 50ms (rất nhạy)
             let now = Date.now();
             if (now - lastScanTime > 50) {
                 lastScanTime = now;
@@ -356,48 +348,39 @@
     }
 
     function processQRCode(data) {
-        // CHỐNG TRÙNG: Kiểm tra xem mã này đã có trong mảng chưa
         if (scannedCodes.includes(data)) {
-            return; // Nếu có rồi thì bỏ qua luôn, không làm gì cả
+            return;
         }
 
-        // Thêm vào mảng
         scannedCodes.push(data);
         
-        // Hiệu ứng chớp xanh
         const camWrapper = document.getElementById('camera-wrapper');
         camWrapper.classList.add('scan-success');
         setTimeout(() => camWrapper.classList.remove('scan-success'), 150);
 
-        // Phát âm thanh bíp ngắn
         beep();
-
-        // Cập nhật giao diện
         updateUI();
     }
 
-    // Hàm tạo tiếng "Bíp" khi quét thành công
     function beep() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
             osc.type = 'sine';
-            osc.frequency.value = 800; // Tần số âm thanh
+            osc.frequency.value = 800; 
             osc.connect(ctx.destination);
             osc.start();
-            osc.stop(ctx.currentTime + 0.1); // Kêu trong 0.1 giây
+            osc.stop(ctx.currentTime + 0.1); 
         } catch(e) { console.log("Trình duyệt không hỗ trợ AudioContext"); }
     }
 
-// --- 4. GỬI DỮ LIỆU LÊN SERVER ---
 function sendData() {
     if (scannedCodes.length === 0) return;
     
     const btn = document.getElementById('send-btn');
-    btn.innerHTML = "⏳ Đang gửi...";
+    btn.innerHTML = "Đang gửi...";
     btn.disabled = true;
 
-    // Ép mảng thẳng thành chuỗi JSON
     const rawJSON = JSON.stringify(scannedCodes);
 
     fetch(GAS_WEB_APP_URL, {
@@ -410,7 +393,7 @@ function sendData() {
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
-            showToast(`✅ Đã lưu thành công ${data.count} mã!`);
+            showToast(`Đã lưu thành công ${data.count} mã!`);
             scannedCodes = []; 
             updateUI();
         } else {
@@ -422,7 +405,7 @@ function sendData() {
         console.error(err);
     })
     .finally(() => {
-        btn.innerHTML = "☁️ Gửi Dữ Liệu";
+        btn.innerHTML = "Gửi Dữ Liệu";
         btn.disabled = scannedCodes.length === 0;
     });
 }
