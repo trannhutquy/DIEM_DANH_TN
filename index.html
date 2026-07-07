@@ -359,7 +359,7 @@
             timerBox.className = "timer-box timer-open";
             startBtn.disabled = false;
         } else {
-            timerBox.innerHTML = `Ngoài giờ điểm danh quy định (Hệ thống đang đóng)`;
+            timerBox.innerHTML = `Ngoài giờ điểm danh quy định`;
             timerBox.className = "timer-box timer-closed";
             startBtn.disabled = true;
 
@@ -379,7 +379,7 @@
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('camera-wrapper').style.display = 'none';
         document.getElementById('scan-line').style.display = 'none';
-        alert("Đã hết thời gian cho phép điểm danh! Hệ thống tự động đóng camera.");
+        alert("Đã hết thời gian cho phép điểm danh.");
     }
 
     // Chạy cập nhật đồng hồ đếm ngược mỗi giây một lần
