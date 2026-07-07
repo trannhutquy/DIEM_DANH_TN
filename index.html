@@ -25,7 +25,6 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            color: var(--text); 
             padding-bottom: 30px;
         }
 
@@ -76,6 +75,31 @@
             font-size: 14px;
             color: #606770;
             font-weight: 600;
+        }
+
+        /* --- PHẦN ĐỒNG HỒ ĐẾM NGƯỢC --- */
+        .timer-box {
+            width: 92%;
+            max-width: 500px;
+            margin-top: 15px;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 15px;
+            box-sizing: border-box;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .timer-open {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .timer-closed {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
         }
 
         /* --- PHẦN CAMERA --- */
@@ -202,11 +226,12 @@
         }
 
         .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; background: #cccccc; color: #666; box-shadow: none; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; background: #cccccc; color: #666; box-shadow: none; border: none; }
+        .btn:disabled:hover { background: #cccccc; color: #666; }
         
         .btn-start { 
             background: linear-gradient(135deg, var(--primary), var(--primary-light)); 
-            margin-top: 40px; 
+            margin-top: 25px; 
             width: 85%; 
             max-width: 350px;
             border-radius: 30px; 
@@ -244,6 +269,7 @@
 </head>
 <body>
 
+    <!-- Khung thông báo tạm ngừng hoạt động -->
     <div id="password-reminder-modal" style="display: flex; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: all 0.3s;">
         <div style="background-color: white; padding: 30px; border-radius: 16px; max-width: 360px; width: 85%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.25); animation: modalContentPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
             <h3 style="margin: 0 0 12px 0; color: #2c3e50; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 600;">THÔNG BÁO</h3>
@@ -252,13 +278,17 @@
             </p>
         </div>
     </div>
+
     <div class="header-container">
         <img src="https://i.imgur.com/9lLikJX_d.jpeg?maxwidth=520&shape=thumb&fidelity=high" alt="Logo Xứ đoàn Thánh Anrê" class="logo" id="logo-img">
         <h1 class="main-title">Xứ Đoàn Thánh Anrê</h1>
         <h2 class="sub-title">Hệ Thống Điểm Danh QR</h2>
     </div>
 
-    <button id="start-btn" class="btn btn-start" onclick="startCamera()">Bật Camera Quét Mã</button>
+    <!-- Khung đồng hồ đếm ngược -->
+    <div id="timer-box" class="timer-box timer-closed">Đang kiểm tra thời gian...</div>
+
+    <button id="start-btn" class="btn btn-start" onclick="startCamera()" disabled>Bật Camera Quét Mã</button>
 
     <div id="camera-wrapper">
         <div class="scan-line" id="scan-line"></div>
@@ -290,6 +320,82 @@
     let isCameraRunning = false;
     let lastScanTime = 0;
 
+    // Cấu hình mốc thời gian quy đổi ra giây trong ngày
+    const MORNING_START = 7 * 3600;                 // 07:00:00
+    const MORNING_END = 9 * 3600 + 45 * 60;         // 09:45:00
+    const AFTERNOON_START = 16 * 3600;              // 16:00:00
+    const AFTERNOON_END = 18 * 3600 + 45 * 60;      // 18:45:00
+
+    function checkAttendanceTime() {
+        const now = new Date();
+        const day = now.getDay(); // 0: Chúa Nhật, 2: Thứ 3, 4: Thứ 5
+        const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+        let isOpen = false;
+        let timeRemaining = 0;
+
+        if (day === 2 || day === 4) { // Thứ 3 hoặc Thứ 5
+            if (currentSeconds >= AFTERNOON_START && currentSeconds < AFTERNOON_END) {
+                isOpen = true;
+                timeRemaining = AFTERNOON_END - currentSeconds;
+            }
+        } else if (day === 0) { // Chúa Nhật
+            // Sáng Chúa Nhật
+            if (currentSeconds >= MORNING_START && currentSeconds < MORNING_END) {
+                isOpen = true;
+                timeRemaining = MORNING_END - currentSeconds;
+            } 
+            // Chiều Chúa Nhật
+            else if (currentSeconds >= AFTERNOON_START && currentSeconds < AFTERNOON_END) {
+                isOpen = true;
+                timeRemaining = AFTERNOON_END - currentSeconds;
+            }
+        }
+
+        return { isOpen, timeRemaining };
+    }
+
+    function updateTimerDisplay() {
+        const timerBox = document.getElementById('timer-box');
+        const startBtn = document.getElementById('start-btn');
+        const { isOpen, timeRemaining } = checkAttendanceTime();
+
+        if (isOpen) {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const countdownStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            timerBox.innerHTML = `⏱️ Thời gian điểm danh còn lại: <strong style="font-size: 17px;">${countdownStr}</strong>`;
+            timerBox.className = "timer-box timer-open";
+            startBtn.disabled = false;
+        } else {
+            timerBox.innerHTML = `🔒 Ngoài giờ điểm danh quy định (Hệ thống đang đóng)`;
+            timerBox.className = "timer-box timer-closed";
+            startBtn.disabled = true;
+
+            // Nếu đang bật camera mà hết giờ đột xuất, tự động ngắt hệ thống quét luôn
+            if (isCameraRunning) {
+                stopCameraDueToTimeout();
+            }
+        }
+    }
+
+    function stopCameraDueToTimeout() {
+        isCameraRunning = false;
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+        document.getElementById('start-btn').style.display = 'block';
+        document.getElementById('camera-wrapper').style.display = 'none';
+        document.getElementById('scan-line').style.display = 'none';
+        alert("Đã hết thời gian cho phép điểm danh! Hệ thống tự động đóng camera.");
+    }
+
+    // Chạy cập nhật đồng hồ đếm ngược mỗi giây một lần
+    setInterval(updateTimerDisplay, 1000);
+    window.addEventListener('DOMContentLoaded', updateTimerDisplay);
+
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
@@ -302,7 +408,7 @@
         const list = document.getElementById('scanned-list');
         list.innerHTML = "";
         
-        [...scannedCodes].reverse().forEach((code, index) => {
+        ([...scannedCodes]).reverse().forEach((code, index) => {
             const li = document.createElement('li');
             li.innerHTML = `<span>${code}</span> <small>#${scannedCodes.length - index}</small>`;
             list.appendChild(li);
@@ -320,6 +426,12 @@
     }
 
     function startCamera() {
+        // Kiểm tra chặn trước khi cho phép mở camera
+        if (!checkAttendanceTime().isOpen) {
+            alert("Không thể bật camera ngoài khung giờ quy định!");
+            return;
+        }
+
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(stream => {
                 video.srcObject = stream;
@@ -362,6 +474,12 @@
     }
 
     function processQRCode(data) {
+        // Lớp bảo mật cuối cùng: Chặn xử lý mã QR nếu cố tình mở camera ngoài giờ quy định
+        if (!checkAttendanceTime().isOpen) {
+            showToast("Lỗi: Đã hết giờ điểm danh!");
+            return;
+        }
+
         if (scannedCodes.includes(data)) {
             return;
         }
@@ -388,41 +506,41 @@
         } catch(e) { console.log("Trình duyệt không hỗ trợ AudioContext"); }
     }
 
-function sendData() {
-    if (scannedCodes.length === 0) return;
-    
-    const btn = document.getElementById('send-btn');
-    btn.innerHTML = "Đang gửi...";
-    btn.disabled = true;
+    function sendData() {
+        if (scannedCodes.length === 0) return;
+        
+        const btn = document.getElementById('send-btn');
+        btn.innerHTML = "Đang gửi...";
+        btn.disabled = true;
 
-    const rawJSON = JSON.stringify(scannedCodes);
+        const rawJSON = JSON.stringify(scannedCodes);
 
-    fetch(GAS_WEB_APP_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: rawJSON
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            showToast(`Đã lưu thành công ${data.count} mã!`);
-            scannedCodes = []; 
-            updateUI();
-        } else {
-            alert("LỖI TỪ SERVER:\n" + data.message + "\n\nDữ liệu gửi lên: " + data.rawReceived);
-        }
-    })
-    .catch(err => {
-        alert("Lỗi kết nối mạng! Không thể gửi dữ liệu.");
-        console.error(err);
-    })
-    .finally(() => {
-        btn.innerHTML = "Gửi Dữ Liệu";
-        btn.disabled = scannedCodes.length === 0;
-    });
-}
+        fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: rawJSON
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                showToast(`Đã lưu thành công ${data.count} mã!`);
+                scannedCodes = []; 
+                updateUI();
+            } else {
+                alert("LỖI TỪ SERVER:\n" + data.message + "\n\nDữ liệu gửi lên: " + data.rawReceived);
+            }
+        })
+        .catch(err => {
+            alert("Lỗi kết nối mạng! Không thể gửi dữ liệu.");
+            console.error(err);
+        })
+        .finally(() => {
+            btn.innerHTML = "Gửi Dữ Liệu";
+            btn.disabled = scannedCodes.length === 0;
+        });
+    }
 </script>
 </body>
 </html>
