@@ -355,11 +355,11 @@
             const seconds = timeRemaining % 60;
             const countdownStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
-            timerBox.innerHTML = `⏱️ Thời gian điểm danh còn lại: <strong style="font-size: 17px;">${countdownStr}</strong>`;
+            timerBox.innerHTML = `Thời gian điểm danh còn lại: <strong style="font-size: 17px;">${countdownStr}</strong>`;
             timerBox.className = "timer-box timer-open";
             startBtn.disabled = false;
         } else {
-            timerBox.innerHTML = `🔒 Ngoài giờ điểm danh quy định (Hệ thống đang đóng)`;
+            timerBox.innerHTML = `Ngoài giờ điểm danh quy định (Hệ thống đang đóng)`;
             timerBox.className = "timer-box timer-closed";
             startBtn.disabled = true;
 
