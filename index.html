@@ -321,7 +321,7 @@
             <h2 style="color: var(--primary); margin-top: 10px; margin-bottom: 0px; font-size: 20px;">ĐĂNG NHẬP ĐIỂM DANH</h2>
             <p style="color: #666; font-size: 13px; font-weight: 600;">Dành riêng trưởng ban kỉ luật</p>
             
-            <input type="password" id="pin-input" placeholder="Nhập mã PIN..." pattern="[0-9]*" inputmode="numeric">
+            <input type="password" id="pin-input" placeholder="Nhập mã PIN..." inputmode="text">
             <button class="btn btn-start" style="width: 100%; margin-top: 15px; border-radius: 10px;" onclick="verifyPIN()">Mở Khóa Hệ Thống</button>
             <p id="pin-error" style="color: red; font-size: 13px; margin-top: 10px; display: none;">Mã PIN không chính xác!</p>
         </div>
@@ -357,8 +357,11 @@
     <div id="toast">Thông báo</div>
 
 <script>
-    // --- THIẾT LẬP MÃ PIN TẠI ĐÂY ---
+    // --- THIẾT LẬP MÃ PIN & TỌA ĐỘ GPS NHÀ THỜ ---
     const HT_PIN_CODE = "HT017"; 
+    const CHURCH_LAT = 10.689142716165085;
+    const CHURCH_LON = 105.36001588872371;
+    const ALLOWED_RADIUS = 150; // Bán kính vùng an toàn cho phép quét mã (mét)
 
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzOOGzqBxu8RiSQxCemehYATTmAQs-EEsTRj2B3NA9Nfd07nO595z2vIlfZ1yIpAvFdmA/exec";
     
@@ -377,7 +380,7 @@
     const AFTERNOON_START = 16 * 3600;              // 16:00:00
     const AFTERNOON_END = 18 * 3600 + 45 * 60;      // 18:45:00
 
-    // --- HÀM XỬ LÝ MÃ PIN ---
+    // --- HÀM XỬ LÝ MÃ PIN & XÁC THỰC VỊ TRÍ ---
     window.addEventListener('DOMContentLoaded', () => {
         updateTimerDisplay(); // Vẫn tính toán giờ ngầm phía sau
 
@@ -390,22 +393,69 @@
         });
     });
 
+    // Công thức toán học Haversine tính toán khoảng cách mặt cong Trái Đất
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Bán kính Trái Đất (mét)
+        const phi1 = lat1 * Math.PI / 180;
+        const phi2 = lat2 * Math.PI / 180;
+        const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+        const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+        const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Trả về khoảng cách theo đơn vị mét
+    }
+
     function verifyPIN() {
         const inputCode = document.getElementById("pin-input").value;
         const errorMsg = document.getElementById("pin-error");
         
         if (inputCode === HT_PIN_CODE) {
-            const overlay = document.getElementById("pin-overlay");
-            overlay.style.opacity = "0"; // Hiệu ứng mờ dần
+            errorMsg.style.display = "none";
             
-            setTimeout(() => {
-                overlay.style.display = "none"; // Xóa hẳn khỏi màn hình
-            }, 400); 
+            // Tiến hành quét định vị GPS sau khi nhập đúng PIN
+            if (!navigator.geolocation) {
+                alert("Thiết bị hoặc trình duyệt không hỗ trợ GPS định vị. Không thể xác thực!");
+                return;
+            }
+
+            showToast("Đang kiểm tra vị trí GPS...");
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+                    
+                    // Tính khoảng cách từ điện thoại đến tâm nhà thờ
+                    const distance = calculateDistance(userLat, userLon, CHURCH_LAT, CHURCH_LON);
+                    
+                    if (distance > ALLOWED_RADIUS) {
+                        alert(`LỖI BẢO MẬT:\nBạn đang đứng cách nhà thờ ${Math.round(distance)}m (Vượt mức tối đa cho phép ${ALLOWED_RADIUS}m).\nHệ thống điểm danh từ xa đã tự động khóa!`);
+                        document.getElementById("pin-input").value = "";
+                    } else {
+                        // Vị trí hợp lệ -> Mở khóa hệ thống
+                        showToast("Xác thực vùng an toàn thành công!");
+                        const overlay = document.getElementById("pin-overlay");
+                        overlay.style.opacity = "0"; 
+                        
+                        setTimeout(() => {
+                            overlay.style.display = "none"; 
+                        }, 400); 
+                    }
+                },
+                (error) => {
+                    alert("Không thể truy cập GPS! Vui lòng bật Vị trí trên điện thoại và cấp quyền truy cập định vị cho trình duyệt web.");
+                },
+                { enableHighAccuracy: true, timeout: 6000 } // Yêu cầu độ chính xác phần cứng cao
+            );
         } else {
             errorMsg.style.display = "block";
             document.getElementById("pin-input").value = ""; 
             
-            // Hiệu ứng rung khung nhập PIN
+            // Hiệu ứng rung khung nhập PIN khi gõ sai
             const pinCard = document.querySelector(".pin-card");
             pinCard.style.transform = "translateX(-5px)";
             setTimeout(() => pinCard.style.transform = "translateX(5px)", 100);
