@@ -433,14 +433,14 @@
                     const distance = calculateDistance(userLat, userLon, CHURCH_LAT, CHURCH_LON);
                     
                     if (distance > ALLOWED_RADIUS) {
-                        alert(`LỖI BẢO MẬT:\nBạn đang đứng cách nhà thờ ${Math.round(distance)}m (Vượt mức tối đa cho phép ${ALLOWED_RADIUS}m).\nHệ thống điểm danh từ xa đã tự động khóa!`);
+                        alert(`LỖI BẢO MẬT:\nBạn đang đứng cách nhà thờ ${Math.round(distance)}m (Vượt mức tối đa cho phép ${ALLOWED_RADIUS}m).\nHệ thống điểm danh đã tự động khóa!`);
                         document.getElementById("pin-input").value = "";
                     } else {
                         // Vị trí hợp lệ -> Mở khóa hệ thống
                         showToast("Xác thực vùng an toàn thành công!");
                         const overlay = document.getElementById("pin-overlay");
                         overlay.style.opacity = "0"; 
-                        
+                                                                                                       
                         setTimeout(() => {
                             overlay.style.display = "none"; 
                         }, 400); 
