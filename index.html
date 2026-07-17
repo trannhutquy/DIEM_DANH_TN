@@ -9,13 +9,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
         :root { 
-            --primary: #c8102e; /* Màu đỏ chủ đạo */
-            --primary-light: #e63946; /* Màu đỏ sáng hơn */
-            --success: #c8102e; /* Chuyển màu thành công sang đỏ đồng bộ */
-            --danger: #333333; /* Chuyển màu nút xóa thành đen xám để nhường sự nổi bật cho màu đỏ */
-            --bg: #fdfdfd; /* Nền trắng/xám cực nhạt */
+            --primary: #c8102e; 
+            --primary-light: #e63946; 
+            --success: #c8102e; 
+            --danger: #333333; 
+            --bg: #fdfdfd; 
             --text: #1c1e21;
-            --card-bg: #ffffff; /* Nền thẻ trắng */
+            --card-bg: #ffffff; 
         }
         
         body { 
@@ -26,6 +26,51 @@
             flex-direction: column; 
             align-items: center; 
             padding-bottom: 30px;
+        }
+
+        /* --- GIAO DIỆN KHÓA PIN --- */
+        #pin-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(253, 253, 253, 0.95);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease;
+        }
+
+        .pin-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 85%;
+            max-width: 350px;
+            border: 2px solid var(--primary);
+            transition: transform 0.2s ease;
+        }
+
+        #pin-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-sizing: border-box;
+            letter-spacing: 5px;
+        }
+
+        #pin-input:focus {
+            outline: none;
+            border-color: var(--primary);
         }
 
         /* --- HIỆU ỨNG CHO THÔNG BÁO --- */
@@ -269,6 +314,19 @@
 </head>
 <body>
 
+    <!-- MÀN HÌNH KHÓA PIN -->
+    <div id="pin-overlay">
+        <div class="pin-card">
+            <img src="https://i.imgur.com/9lLikJX_d.jpeg?maxwidth=520&shape=thumb&fidelity=high" alt="Logo" class="logo">
+            <h2 style="color: var(--primary); margin-top: 10px; margin-bottom: 0px; font-size: 20px;">XÁC THỰC QUYỀN</h2>
+            <p style="color: #666; font-size: 13px; font-weight: 600;">Dành riêng cho Huynh Trưởng</p>
+            
+            <input type="password" id="pin-input" placeholder="Nhập mã PIN..." pattern="[0-9]*" inputmode="numeric">
+            <button class="btn btn-start" style="width: 100%; margin-top: 15px; border-radius: 10px;" onclick="verifyPIN()">Mở Khóa Hệ Thống</button>
+            <p id="pin-error" style="color: red; font-size: 13px; margin-top: 10px; display: none;">Mã PIN không chính xác!</p>
+        </div>
+    </div>
+
     <div class="header-container">
         <img src="https://i.imgur.com/9lLikJX_d.jpeg?maxwidth=520&shape=thumb&fidelity=high" alt="Logo Xứ đoàn Thánh Anrê" class="logo" id="logo-img">
         <h1 class="main-title">Xứ Đoàn Thánh Anrê</h1>
@@ -299,6 +357,9 @@
     <div id="toast">Thông báo</div>
 
 <script>
+    // --- THIẾT LẬP MÃ PIN TẠI ĐÂY ---
+    const HT_PIN_CODE = "2026"; 
+
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzOOGzqBxu8RiSQxCemehYATTmAQs-EEsTRj2B3NA9Nfd07nO595z2vIlfZ1yIpAvFdmA/exec";
     
     let scannedCodes = [];
@@ -315,6 +376,42 @@
     const MORNING_END = 9 * 3600 + 45 * 60;         // 09:45:00
     const AFTERNOON_START = 16 * 3600;              // 16:00:00
     const AFTERNOON_END = 18 * 3600 + 45 * 60;      // 18:45:00
+
+    // --- HÀM XỬ LÝ MÃ PIN ---
+    window.addEventListener('DOMContentLoaded', () => {
+        updateTimerDisplay(); // Vẫn tính toán giờ ngầm phía sau
+
+        // Bắt sự kiện nhấn Enter
+        document.getElementById("pin-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                verifyPIN();
+            }
+        });
+    });
+
+    function verifyPIN() {
+        const inputCode = document.getElementById("pin-input").value;
+        const errorMsg = document.getElementById("pin-error");
+        
+        if (inputCode === HT_PIN_CODE) {
+            const overlay = document.getElementById("pin-overlay");
+            overlay.style.opacity = "0"; // Hiệu ứng mờ dần
+            
+            setTimeout(() => {
+                overlay.style.display = "none"; // Xóa hẳn khỏi màn hình
+            }, 400); 
+        } else {
+            errorMsg.style.display = "block";
+            document.getElementById("pin-input").value = ""; 
+            
+            // Hiệu ứng rung khung nhập PIN
+            const pinCard = document.querySelector(".pin-card");
+            pinCard.style.transform = "translateX(-5px)";
+            setTimeout(() => pinCard.style.transform = "translateX(5px)", 100);
+            setTimeout(() => pinCard.style.transform = "translateX(0)", 200);
+        }
+    }
 
     function checkAttendanceTime() {
         const now = new Date();
@@ -363,7 +460,7 @@
             timerBox.className = "timer-box timer-closed";
             startBtn.disabled = true;
 
-            // Nếu đang bật camera mà hết giờ đột xuất, tự động ngắt hệ thống quét luôn
+            // Nếu đang bật camera mà hết giờ đột xuất, tự động ngắt
             if (isCameraRunning) {
                 stopCameraDueToTimeout();
             }
@@ -384,7 +481,6 @@
 
     // Chạy cập nhật đồng hồ đếm ngược mỗi giây một lần
     setInterval(updateTimerDisplay, 1000);
-    window.addEventListener('DOMContentLoaded', updateTimerDisplay);
 
     function showToast(msg) {
         const toast = document.getElementById('toast');
@@ -416,7 +512,6 @@
     }
 
     function startCamera() {
-        // Kiểm tra chặn trước khi cho phép mở camera
         if (!checkAttendanceTime().isOpen) {
             alert("Không thể bật camera ngoài khung giờ quy định!");
             return;
@@ -464,7 +559,6 @@
     }
 
     function processQRCode(data) {
-        // Lớp bảo mật cuối cùng: Chặn xử lý mã QR nếu cố tình mở camera ngoài giờ quy định
         if (!checkAttendanceTime().isOpen) {
             showToast("Lỗi: Đã hết giờ điểm danh!");
             return;
